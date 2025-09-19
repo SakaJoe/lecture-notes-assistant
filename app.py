@@ -39,7 +39,12 @@ vector_store = PineconeVectorStore.from_existing_index(
     index_name=INDEX_NAME,
     embedding=embeddings,
 )
-retriever = vector_store.as_retriever(search_kwargs={"k": 5})
+
+# retriever = vector_store.as_retriever(search_kwargs={"k": 5})
+retriever = vector_store.as_retriever(
+    search_kwargs={"k": 5, "filter": {"user": st.session_state.session_id}}
+)
+
 
 # Initialize LLM
 llm = ChatOpenAI(
