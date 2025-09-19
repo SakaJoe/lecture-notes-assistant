@@ -1,12 +1,15 @@
 import tempfile
 import streamlit as st
-
+import uuid
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_pinecone import PineconeVectorStore
 from langchain_community.document_loaders import PyPDFLoader, PyMuPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from pinecone import Pinecone, ServerlessSpec
 
+# Assign a unique session_id for each user (persists during their session)
+if "session_id" not in st.session_state:
+    st.session_state.session_id = str(uuid.uuid4())
 
 OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
 PINECONE_API_KEY = st.secrets["PINECONE_API_KEY"]
@@ -77,7 +80,13 @@ if uploaded_file is not None:
 
     # Add documents to Pinecone
     vector_store.add_documents(documents)
-    st.success(f"Added {len(documents)} chunks from {uploaded_file.name} to Pinecone DB")
+    # Add metadata: source file + user session
+    for doc in documents:
+        doc.metadata["source"] = uploaded_file.name
+        doc.metadata["user"] = st.session_state.session_id
+
+    vector_store.add_documents(documents)
+    st.success(f"Added {len(documents)} chunks from {uploaded_file.name} to Pinecone DB (private to your session)")
 
 # -------------------
 # Chat Interface
