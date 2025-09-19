@@ -59,7 +59,44 @@ if "chat_history" not in st.session_state:
 # -------------------
 # Upload PDF Section
 # -------------------
-uploaded_file = st.file_uploader("Upload lecture notes (PDF)", type=["pdf"])
+# uploaded_file = st.file_uploader("Upload lecture notes (PDF)", type=["pdf"])
+uploaded_files = st.file_uploader(
+    "📂 Upload up to 3 lecture notes (PDFs)", 
+    type=["pdf"], 
+    accept_multiple_files=True
+)
+
+if uploaded_files:
+    if len(uploaded_files) > 3:
+        st.warning("⚠️ You can only upload a maximum of 3 PDFs per session.")
+        uploaded_files = uploaded_files[:3]
+
+    for uploaded_file in uploaded_files:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
+            tmp_file.write(uploaded_file.read())
+            pdf_path = tmp_file.name
+
+        # Try PyPDFLoader first, fallback to PyMuPDFLoader
+        try:
+            loader = PyPDFLoader(pdf_path)
+            pages = loader.load()
+        except Exception:
+            loader = PyMuPDFLoader(pdf_path)
+            pages = loader.load()
+
+        # Split into chunks
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+        documents = text_splitter.split_documents(pages)
+
+        # Add metadata: source file + user session
+        for doc in documents:
+            doc.metadata["source"] = uploaded_file.name
+            doc.metadata["user"] = st.session_state.session_id
+
+        # Add documents to Pinecone
+        vector_store.add_documents(documents)
+        st.success(f"✅ Added {len(documents)} chunks from {uploaded_file.name} to Pinecone DB (private to your session)")
+
 
 if uploaded_file is not None:
     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
