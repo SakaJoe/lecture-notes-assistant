@@ -3,16 +3,15 @@ import streamlit as st
 import uuid
 
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
-from langchain_community.vectorstores import Pinecone as PineconeVectorStore
+from langchain_pinecone import PineconeVectorStore
 from langchain_community.document_loaders import PyPDFLoader, PyMuPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
-import pinecone
+from pinecone import Pinecone, ServerlessSpec
 
 # -------------------
 # Session Setup
 # -------------------
-# Assign a unique session_id for each user (persists during their session)
 if "session_id" not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
 
@@ -25,16 +24,20 @@ PINECONE_ENV = st.secrets["PINECONE_ENV"]  # e.g., "us-east-1-aws"
 INDEX_NAME = "rag-index"
 
 # -------------------
-# Initialize Pinecone (v3 client)
+# Initialize Pinecone (v5 client)
 # -------------------
-pinecone.init(api_key=PINECONE_API_KEY, environment=PINECONE_ENV)
+pc = Pinecone(api_key=PINECONE_API_KEY)
 
 # Create index if it doesn’t exist
-if INDEX_NAME not in pinecone.list_indexes():
-    pinecone.create_index(
+if INDEX_NAME not in pc.list_indexes().names():
+    pc.create_index(
         name=INDEX_NAME,
-        dimension=1536,  # must match OpenAI embedding size
-        metric="cosine"
+        dimension=1536,
+        metric="cosine",
+        spec=ServerlessSpec(
+            cloud="aws",  # adjust if your Pinecone project is on GCP
+            region="us-east-1",
+        ),
     )
 
 # -------------------
@@ -101,7 +104,9 @@ if uploaded_files:
             pages = loader.load()
 
         # Split into chunks
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=1000, chunk_overlap=200
+        )
         documents = text_splitter.split_documents(pages)
 
         # Add metadata: source file + user session
