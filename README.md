@@ -1,6 +1,4 @@
-# 📚 Lecture Notes Assistant
-
----
+## 📚 Lecture Notes Assistant
 
 A Streamlit-powered RAG app that lets you **chat with your lecture notes**.  
 Upload up to **3 PDFs per session**, have them embedded into **Pinecone**, and ask questions powered by **OpenAI’s GPT-4o-mini**.
@@ -15,7 +13,7 @@ Upload up to **3 PDFs per session**, have them embedded into **Pinecone**, and a
 
 ---
 
-🧪 Usage
+## 🧪 Usage
 - Upload 1–3 PDF lecture notes.
 - Ask a question in the chat box.
 - The assistant retrieves the most relevant chunks and answers using GPT-4o-mini.
@@ -23,7 +21,7 @@ Upload up to **3 PDFs per session**, have them embedded into **Pinecone**, and a
 
 ---
 
-📌 Persistence Notes
+## 📌 Persistence Notes
 - Uploaded PDFs are stored permanently in Pinecone.
 - However, each session gets a random session ID. If you close the app and reopen, you’ll get a new session and won’t see your old notes.
 - Your data still exists in Pinecone, but it’s orphaned (not connected to your new session).
